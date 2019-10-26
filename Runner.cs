@@ -96,6 +96,8 @@ namespace ShingoTree
 				ReportProgress(maxprog);
 				output.WriteLine();
 			}
+			
+			output.Close();
 		}
 	}
 }
