@@ -9,13 +9,16 @@ namespace ShingoTree
 		public bool printFile;
 		public bool progress;
 		public TextWriter output;
+		public List<string> extensionFilter;
 
 		private double _progress;
 		private int _lastReportProgress;
 
 		void LookUpDirectory(string path, string pprefix, double maxprog)
 		{
-			string[] directories = Directory.GetDirectories(path);
+			string[] directories;
+			try { directories = Directory.GetDirectories(path); }
+			catch (UnauthorizedAccessException) { Console.Error.WriteLine("Cannot access: " + path); return; }
 			int dirLength = directories.Length;
 
 			if (printFile)
@@ -24,10 +27,23 @@ namespace ShingoTree
 				if (files.Length > 0)
 				{
 					string prefix = pprefix + (dirLength > 0 ? "│  " : "    ");
-					foreach (var file in files)
+					if (extensionFilter != null)
 					{
-						output.Write(prefix);
-						output.WriteLine(file.Substring(path.Length + 1));
+						foreach (var file in files)
+						{
+							if (!CompareExtension(file))
+								continue;
+							output.Write(prefix);
+							output.WriteLine(file.Substring(path.Length + 1));
+						}
+					}
+					else
+					{
+						foreach (var file in files)
+						{
+							output.Write(prefix);
+							output.WriteLine(file.Substring(path.Length + 1));
+						}
 					}
 					output.WriteLine(prefix);
 				}
@@ -80,6 +96,15 @@ namespace ShingoTree
 			_progress = p;
 		}
 
+		bool CompareExtension(string file)
+		{
+			var ext = Path.GetExtension(file);
+			foreach (var extf in extensionFilter)
+				if (string.Compare(ext, extf, ignoreCase: true) == 0)
+					return true;
+			return false;
+		}
+
 		internal void Lookup(List<string> pathes)
 		{
 			_progress = 0.0;
@@ -96,7 +121,7 @@ namespace ShingoTree
 				ReportProgress(maxprog);
 				output.WriteLine();
 			}
-			
+
 			output.Close();
 		}
 	}
